@@ -1,9 +1,9 @@
 package registry
 
 import (
-    "github.com/dfarr/kafka-lib/pkg/message"
-    "github.com/dfarr/kafka-lib/pkg/message/generic"
-    "github.com/dfarr/kafka-lib/pkg/message/metadata"
+    "github.com/keromesh/kafka-lib/pkg/message"
+    "github.com/keromesh/kafka-lib/pkg/message/generic"
+    "github.com/keromesh/kafka-lib/pkg/message/metadata"
 )
 
 

@@ -1,3 +1,3 @@
-module github.com/dfarr/kafka-lib
+module github.com/keromesh/kafka-lib
 
 go 1.15

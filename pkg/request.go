@@ -3,9 +3,9 @@ package kafkalib
 import (
     "io"
     "bytes"
-    "github.com/dfarr/kafka-lib/pkg/message"
-    "github.com/dfarr/kafka-lib/pkg/registry"
-    "github.com/dfarr/kafka-lib/internal/wire"
+    "github.com/keromesh/kafka-lib/pkg/message"
+    "github.com/keromesh/kafka-lib/pkg/registry"
+    "github.com/keromesh/kafka-lib/internal/wire"
 )
 
 

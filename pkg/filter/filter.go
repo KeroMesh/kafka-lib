@@ -1,7 +1,7 @@
 package filter
 
 import (
-    "github.com/dfarr/kafka-lib/pkg"
+    "github.com/keromesh/kafka-lib/pkg"
 )
 
 
