@@ -1,8 +1,8 @@
 package wire
 
 import (
-    "encoding/binary"
     "io"
+    "encoding/binary"
 )
 
 func WriteBool(w io.Writer, b bool) error {
@@ -106,4 +106,8 @@ func WriteVarint(w io.Writer, v int64) error {
     l := binary.PutVarint(dumb, v)
     _, e := w.Write(dumb[0:l])
     return e
+}
+
+func WriteTagBuffer(w io.Writer, tb map[string]interface{}) error {
+    return nil
 }

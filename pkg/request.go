@@ -2,7 +2,7 @@ package kafkalib
 
 import (
     "io"
-    // "fmt"
+    "bytes"
     "github.com/dfarr/kafka-lib/pkg/message"
     "github.com/dfarr/kafka-lib/pkg/registry"
     "github.com/dfarr/kafka-lib/internal/wire"
@@ -50,7 +50,13 @@ func (req *Request) Decode(r io.Reader) error {
 func (req *Request) Encode(w io.Writer) error {
     var err error
 
-    if err = wire.WriteInt32(w, req.fullSize()); err != nil {
+    buff := bytes.NewBuffer(make([]byte, 0))
+    if err = req.Body.Encode(buff, req.ApiVer); err != nil {
+        return err
+    }
+
+    body := buff.Bytes()
+    if err = wire.WriteInt32(w, req.fullSize(len(body))); err != nil {
         return err
     }
     if err = wire.WriteInt16(w, req.ApiKey); err != nil {
@@ -67,7 +73,8 @@ func (req *Request) Encode(w io.Writer) error {
             return err
         }
     }
-    if err = req.Body.Encode(w, req.ApiVer); err != nil {
+
+    if _, err = w.Write(body); err != nil {
         return err
     }
 
@@ -85,11 +92,11 @@ func (req *Request) bodySize() int32 {
     return size
 }
 
-func (req *Request) fullSize() int32 {
+func (req *Request) fullSize(bodySize int) int32 {
     size := wire.SizeOfInt16()
     size += wire.SizeOfInt16()
     size += wire.SizeOfInt32()
-    size += req.bodySize()
+    size += int32(bodySize)
     if req.ApiVer > 1 {
         size += wire.SizeOfNullableString(req.Client)
     }

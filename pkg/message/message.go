@@ -1,12 +1,13 @@
 package message
 
 import (
-	"io"
+    "io"
 )
 
 
 type Message interface {
     Decode(io.Reader, int16) error
     Encode(io.Writer, int16) error
-    // GetSize() int32
 }
+
+type TagBuffer = map[string]interface{}

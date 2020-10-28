@@ -1,4 +1,4 @@
-package message
+package generic
 
 import (
     "io"
@@ -19,8 +19,4 @@ func (msg *Generic) Decode(r io.Reader, apiVer int16) error {
 func (msg *Generic) Encode(w io.Writer, apiVer int16) error {
     _, err := w.Write(msg.Bytes)
     return err
-}
-
-func (msg *Generic) GetSize() int32 {
-    return 0
 }

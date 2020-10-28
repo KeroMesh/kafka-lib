@@ -2,7 +2,6 @@ package kafkalib
 
 import (
     "io"
-    // "fmt"
     "bytes"
     "github.com/dfarr/kafka-lib/pkg/message"
     "github.com/dfarr/kafka-lib/pkg/registry"

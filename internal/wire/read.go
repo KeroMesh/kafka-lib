@@ -1,9 +1,9 @@
 package wire
 
 import (
+    "io"
     "bufio"
     "encoding/binary"
-    "io"
 )
 
 func ReadInt8(r io.Reader) (int8, error) {
@@ -31,6 +31,20 @@ func ReadInt32(r io.Reader) (int32, error) {
         return 0, err
     }
     return int32(binary.BigEndian.Uint32(b)), nil
+}
+
+func ReadInt32Array(r io.Reader) ([]int32, error) {
+    l, err := ReadInt32(r)
+    if err != nil {
+        return nil, err
+    }
+    a := make([]int32, l)
+    for i := range a {
+        if a[i], err = ReadInt32(r); err != nil {
+            return nil, err
+        }
+    }
+    return a, nil
 }
 
 func ReadInt64(r io.Reader) (int64, error) {
@@ -88,6 +102,9 @@ func ReadNullableString(r io.Reader) (*string, error) {
     }
 }
 
+// compact_string
+// compact_nullable_string
+
 func ReadBytes(r io.Reader) ([]byte, error) {
     s, err := ReadInt32(r)
     if s == -1 {
@@ -118,4 +135,9 @@ func ReadNullableBytes(r io.Reader) ([]byte, error) {
         return []byte{}, err
     }
     return b, nil
+}
+
+func ReadTagBuffer(r io.Reader) (map[string]interface{}, error) {
+    tb := make(map[string]interface{})
+    return tb, nil
 }
