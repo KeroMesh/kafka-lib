@@ -6,6 +6,6 @@ import (
 
 
 type Filter interface {
-    Request(*kafkalib.Request) error
-    Response(*kafkalib.Response) error
+    Request(*kafkalib.Request, int16) error
+    Response(*kafkalib.Response, int16) error
 }
