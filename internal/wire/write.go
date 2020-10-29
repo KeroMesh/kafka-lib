@@ -114,7 +114,14 @@ func WriteBytes(w io.Writer, v []byte) error {
 }
 
 func WriteVarBytes(w io.Writer, v []byte) error {
-    e := WriteVarint(w, int64(len(v)))
+    var l int
+    if len(v) == 0 {
+        l = -1
+    } else {
+        l = len(v)
+    }
+
+    e := WriteVarint(w, int64(l))
     if e != nil {
         return e
     }
