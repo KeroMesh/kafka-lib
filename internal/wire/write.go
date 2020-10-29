@@ -59,6 +59,18 @@ func WriteString(w io.Writer, v string) error {
     return nil
 }
 
+func WriteVarString(w io.Writer, v string) error {
+    e := WriteVarint(w, int64(len(v)))
+    if e != nil {
+        return e
+    }
+    _, e = w.Write([]byte(v))
+    if e != nil {
+        return e
+    }
+    return nil
+}
+
 func WriteStringArray(w io.Writer, v []string) error {
     e := WriteInt32(w, int32(len(v)))
     if e != nil {
@@ -91,6 +103,18 @@ func WriteNullableBytes(w io.Writer, v []byte) error {
 
 func WriteBytes(w io.Writer, v []byte) error {
     e := WriteInt32(w, int32(len(v)))
+    if e != nil {
+        return e
+    }
+    _, e = w.Write(v)
+    if e != nil {
+        return e
+    }
+    return nil
+}
+
+func WriteVarBytes(w io.Writer, v []byte) error {
+    e := WriteVarint(w, int64(len(v)))
     if e != nil {
         return e
     }

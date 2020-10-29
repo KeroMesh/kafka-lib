@@ -2,7 +2,9 @@ package produce
 
 import (
     "io"
+    "bytes"
     "github.com/keromesh/kafka-lib/internal/wire"
+    . "github.com/keromesh/kafka-lib/pkg/message/recordset"
 )
 
 
@@ -24,7 +26,7 @@ type TopicData struct {
 
 type Data struct {
     Partition int32
-    RecordSet []byte
+    RecordSet *RecordSet
 }
 
 func (msg *ProduceRequest) Decode(r io.Reader, apiVer int16) error {
@@ -58,8 +60,16 @@ func (msg *ProduceRequest) Decode(r io.Reader, apiVer int16) error {
             if msg.TopicData[i].Data[j].Partition, err = wire.ReadInt32(r); err != nil {
                 return err
             }
-            if msg.TopicData[i].Data[j].RecordSet, err = wire.ReadNullableBytes(r); err != nil {
+            if len, err = wire.ReadInt32(r); err != nil {
                 return err
+            }
+            if len == -1 {
+                msg.TopicData[i].Data[j].RecordSet = nil
+            } else {
+                msg.TopicData[i].Data[j].RecordSet = &RecordSet{}
+                if err = msg.TopicData[i].Data[j].RecordSet.Decode(r, apiVer); err != nil {
+                    return err
+                }
             }
         }
     }
@@ -95,8 +105,23 @@ func (msg *ProduceRequest) Encode(w io.Writer, apiVer int16) error {
             if err = wire.WriteInt32(w, msg.TopicData[i].Data[j].Partition); err != nil {
                 return err
             }
-            if err = wire.WriteNullableBytes(w, msg.TopicData[i].Data[j].RecordSet); err != nil {
-                return err
+            if msg.TopicData[i].Data[j].RecordSet == nil {
+                if err = wire.WriteInt32(w, -1); err != nil {
+                    return err
+                }
+            } else {
+                buff := bytes.NewBuffer(make([]byte, 0))
+                if err = msg.TopicData[i].Data[j].RecordSet.Encode(buff, apiVer); err != nil {
+                    return err
+                }
+
+                body := buff.Bytes()
+                if err = wire.WriteInt32(w, int32(len(body))); err != nil {
+                    return err
+                }
+                if _, err = w.Write(body); err != nil {
+                    return err
+                }
             }
         }
     }
