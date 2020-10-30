@@ -63,7 +63,7 @@ func (msg *ProduceRequest) Decode(r io.Reader, apiVer int16) error {
             if len, err = wire.ReadInt32(r); err != nil {
                 return err
             }
-            if len == -1 {
+            if len == 0 || len == -1 {
                 msg.TopicData[i].Data[j].RecordSet = nil
             } else {
                 msg.TopicData[i].Data[j].RecordSet = &RecordSet{}
@@ -106,7 +106,7 @@ func (msg *ProduceRequest) Encode(w io.Writer, apiVer int16) error {
                 return err
             }
             if msg.TopicData[i].Data[j].RecordSet == nil {
-                if err = wire.WriteInt32(w, -1); err != nil {
+                if err = wire.WriteInt32(w, 0); err != nil {
                     return err
                 }
             } else {
