@@ -2,7 +2,14 @@ package produce
 
 import (
     "io"
+    "bytes"
+    "hash/crc32"
     "github.com/keromesh/kafka-lib/internal/wire"
+)
+
+const (
+    base = 9  // why?
+    castagnoli = 0x82f63b78
 )
 
 
@@ -132,11 +139,20 @@ func (rs *RecordSet) Decode(r io.Reader, apiVer int16) error {
 func (rs *RecordSet) Encode(w io.Writer, apiVer int16) error {
     var err error
 
+    buff := bytes.NewBuffer(make([]byte, 0))
+    if err = rs.encodeForCrc(buff, apiVer); err != nil {
+        return err
+    }
+
+    rest := buff.Bytes()
+    batchLength := len(rest) + base
+    crc := crc32.Checksum(rest, crc32.MakeTable(castagnoli))
+
     // RecordSet
     if err = wire.WriteInt64(w, rs.BaseOffset); err != nil {
         return err
     }
-    if err = wire.WriteInt32(w, rs.BatchLength); err != nil {
+    if err = wire.WriteInt32(w, int32(batchLength)); err != nil {
         return err
     }
     if err = wire.WriteInt32(w, rs.PartitionLeaderEpoch); err != nil {
@@ -145,9 +161,19 @@ func (rs *RecordSet) Encode(w io.Writer, apiVer int16) error {
     if err = wire.WriteInt8(w, rs.Magic); err != nil {
         return err
     }
-    if err = wire.WriteInt32(w, rs.Crc); err != nil {
+    if err = wire.WriteInt32(w, int32(crc)); err != nil {
         return err
     }
+    if _, err = w.Write(rest); err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (rs *RecordSet) encodeForCrc(w io.Writer, apiVer int16) error {
+    var err error
+
     if err = wire.WriteInt16(w, rs.Attributes); err != nil {
         return err
     }
@@ -175,36 +201,52 @@ func (rs *RecordSet) Encode(w io.Writer, apiVer int16) error {
         return err
     }
     for i := range rs.Records {
-        if err = wire.WriteVarint(w, rs.Records[i].Length); err != nil {
-            return err
-        }
-        if err = wire.WriteInt8(w, rs.Records[i].Attributes); err != nil {
-            return err
-        }
-        if err = wire.WriteVarint(w, rs.Records[i].TimestampDelta); err != nil {
-            return err
-        }
-        if err = wire.WriteVarint(w, rs.Records[i].OffsetDelta); err != nil {
-            return err
-        }
-        if err = wire.WriteVarBytes(w, rs.Records[i].Key); err != nil {
-            return err
-        }
-        if err = wire.WriteVarBytes(w, rs.Records[i].Value); err != nil {
+        buff := bytes.NewBuffer(make([]byte, 0))
+        if err = rs.encodeRecord(buff, apiVer, i); err != nil {
             return err
         }
 
-        // Headers
-        if err = wire.WriteVarint(w, int64(len(rs.Records[i].Headers))); err != nil {
+        record := buff.Bytes()
+        if err = wire.WriteVarint(w, int64(len(record))); err != nil {
             return err
         }
-        for j := range rs.Records[i].Headers {
-            if err = wire.WriteVarString(w, rs.Records[i].Headers[j].Key); err != nil {
-                return err
-            }
-            if err = wire.WriteVarBytes(w, rs.Records[i].Headers[j].Value); err != nil {
-                return err
-            }
+        if _, err = w.Write(record); err != nil {
+            return err
+        }
+    }
+
+    return nil
+}
+
+func (rs *RecordSet) encodeRecord(w io.Writer, apiVer int16, i int) error {
+    var err error
+
+    if err = wire.WriteInt8(w, rs.Records[i].Attributes); err != nil {
+        return err
+    }
+    if err = wire.WriteVarint(w, rs.Records[i].TimestampDelta); err != nil {
+        return err
+    }
+    if err = wire.WriteVarint(w, rs.Records[i].OffsetDelta); err != nil {
+        return err
+    }
+    if err = wire.WriteVarBytes(w, rs.Records[i].Key); err != nil {
+        return err
+    }
+    if err = wire.WriteVarBytes(w, rs.Records[i].Value); err != nil {
+        return err
+    }
+
+    // Headers
+    if err = wire.WriteVarint(w, int64(len(rs.Records[i].Headers))); err != nil {
+        return err
+    }
+    for j := range rs.Records[i].Headers {
+        if err = wire.WriteVarString(w, rs.Records[i].Headers[j].Key); err != nil {
+            return err
+        }
+        if err = wire.WriteVarBytes(w, rs.Records[i].Headers[j].Value); err != nil {
+            return err
         }
     }
 
